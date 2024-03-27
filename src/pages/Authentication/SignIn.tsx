@@ -1,8 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import LogoDark from '../../images/logo/logo.png';
 import Logo from '../../images/logo/logo.png';
 import logingymimg from '../../../src/images/gymimages/GYM-Management-System2.jpg';
-import { firebaseHostURL, token } from '../UiElements/host';
+import { token } from '../UiElements/host';
+import {
+  auth,
+  signInWithEmailAndPassword,
+} from '../../firestoreConfig/firestore';
 import { useState } from 'react';
 
 interface loginModel {
@@ -25,50 +30,55 @@ const SignIn = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!form.email || !form.password) {
-      if(!form.email){ setIsEmailValidation('Email is required');}
-      if(!form.password){setIsPasswordValidation('Password is required');}
+      if (!form.email) {
+        setIsEmailValidation('Email is required');
+      }
+      if (!form.password) {
+        setIsPasswordValidation('Password is required');
+      }
       console.log('Please fill in all required fields');
       return;
     }
-    const response = await fetch(`${firebaseHostURL}login`, {
-      method: 'POST',
-      body: JSON.stringify(form),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await response.json();
-    if(data.error){
-      if (
-        data.error ==
-        'Firebase: Error (auth/wrong-password).'
-      ) {
-        setIsPasswordValidation('Wrong password');
-      }
-      if (
-        data.error ==
-        'Firebase: Error (auth/user-not-found).'
-      ) {
-        setIsEmailValidation('Wrong email address');
-      }
-      return;
-    }
-    
-    // console.log(data);
-    setForm({ email: '', password: '' });
 
-    if (data.success) {
-      console.log('successfully');
-      const newToken = data.token;
-      token(newToken); // Update the token dynamically
-      localStorage.setItem('authToken', newToken);
-      localStorage.setItem('expiryTime', data.expiresIn.toString());
-      localStorage.setItem(
-        'loginTime',
-        Math.floor(Date.now() / 1000).toString(),
-      );
-      navigate('/');
-    }
+    signInWithEmailAndPassword(auth, form.email, form.password)
+      .then(async (userCredential) => {
+        // // Signed in
+        const user = userCredential.user;
+        const idToken = await user.getIdToken();
+
+        // Parse the ID token payload to get the expiration duration
+        const decodedToken = jwtDecode(idToken);
+        if (decodedToken.exp && decodedToken.iat) {
+          const expiresIn = decodedToken.exp - decodedToken.iat; // Expiration duration in seconds
+
+          // Calculate expiration time by adding the expiration duration to the current time
+          const expirationTime = new Date().getTime() + expiresIn * 1000; // Convert seconds to milliseconds
+
+          token(idToken); // Update the token dynamically
+          localStorage.setItem('authToken', idToken);
+          localStorage.setItem('expiryTime', expirationTime.toString());
+          localStorage.setItem(
+            'loginTime',
+            Math.floor(Date.now() / 1000).toString(),
+          );
+        }
+        else {
+          console.log("Expiration time or issued-at time is missing in the decoded token.");
+          // Handle the case where expiration time or issued-at time is missing
+        }
+    
+
+        // Store or use the ID token and expiration time as needed
+        navigate('/');
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        console.log('🚀 ~ handleSubmit ~ errorCode:', errorCode);
+        const errorMessage = error.message;
+        console.log('🚀 ~ handleSubmit ~ errorMessage:', errorMessage);
+      });
+
+    setForm({ email: '', password: '' });
   };
   return (
     <>
@@ -97,13 +107,17 @@ const SignIn = () => {
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                       name="email"
                       value={form.email || ''}
-                      onChange={(e:any)=>{handleForm(e);  setIsEmailValidation('');}}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsEmailValidation('');
+                      }}
+                      autoComplete="on"
                     />
-                      {isEmailValidation && (
-                        <small className="text-danger">
-                         {isEmailValidation}.
-                        </small>
-                      )}
+                    {isEmailValidation && (
+                      <small className="text-danger">
+                        {isEmailValidation}.
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -117,13 +131,17 @@ const SignIn = () => {
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                       name="password"
                       value={form.password || ''}
-                      onChange={(e:any)=>{handleForm(e);  setIsPasswordValidation('');}}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsPasswordValidation('');
+                      }}
+                      autoComplete="on"
                     />
-                      {isPasswordValidation && (
-                        <small className="text-danger">
-                          {isPasswordValidation}
-                        </small>
-                      )}
+                    {isPasswordValidation && (
+                      <small className="text-danger">
+                        {isPasswordValidation}
+                      </small>
+                    )}
                   </div>
                 </div>
 

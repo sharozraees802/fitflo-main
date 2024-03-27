@@ -1,5 +1,6 @@
 import { gymId, firebaseHostURL, getAuthToken } from './UiElements/host';
 import { useState, useEffect } from 'react';
+import UserOne from '../images/user/user-01.png';
 
 const Profile = () => {
   const [gymData, setGymData] = useState([] as any);
@@ -55,7 +56,7 @@ const Profile = () => {
             <div className="relative drop-shadow-2">
               <img
                 style={{ height: '96px', width: '96px' }}
-                src={gymData.gymLogo}
+                src={gymData.gymLogo || UserOne}
                 alt="profile"
               />
             </div>

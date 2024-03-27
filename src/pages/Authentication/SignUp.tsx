@@ -1,37 +1,104 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LogoDark from '../../images/logo/logo.png';
 import Logo from '../../images/logo/logo.png';
+import {
+  auth,
+  createUserWithEmailAndPassword,
+} from '../../firestoreConfig/firestore';
 import logingymimg from '../../../src/images/gymimages/GYM-Management-System2.jpg';
+import { useState } from 'react';
 
 const SignUp = () => {
+  interface loginModel {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }
+  const [formData, setFormData] = useState({} as loginModel);
+  const [isEmailValidation, setIsEmailValidation] = useState('');
+  const [isPasswordValidation, setIsPasswordValidation] = useState('');
+  const [isFirstNameValidation, setIsFirstNameValidation] = useState('');
+  const [isLastNameValidation, setIsLastNameValidation] = useState('');
+  const navigate = useNavigate();
+  const handleForm = (e: any) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+  const handleSubmit = (e: any) => {
+    e.preventDefault();
+    if (
+      !formData.email ||
+      !formData.password ||
+      !formData.firstName ||
+      !formData.lastName
+    ) {
+      if (!formData.firstName) {
+        setIsFirstNameValidation('First Name is required');
+      }
+      if (!formData.lastName) {
+        setIsLastNameValidation('Last Name is required');
+      }
+      if (!formData.email) {
+        setIsEmailValidation('Email is required');
+      }
+      if (!formData.password) {
+        setIsPasswordValidation('Password is required');
+      }
+      console.log('Please fill in all required fields');
+      return;
+    }
+    createUserWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password,
+    ).then(() => {
+      console.log('User Create');
+      setFormData({ email: '', password: '', firstName: '', lastName: '' });
+      navigate('/auth/signin');
+    })
+    .catch((e)=> console.log(e.message))
+  };
   return (
     <>
       <div className="rounded-sm border border-stroke bg-white overflow-y-hidden shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex flex-wrap">
-        <div className="overflow-auto w-full lg:h-[42rem] border-stroke dark:border-strokedark xl:w-1/2 xl:border-l-2">
+          <div className="overflow-auto w-full lg:h-[42rem] border-stroke dark:border-strokedark xl:w-1/2 xl:border-l-2">
             <div className="w-full  sm:p-12.5 ">
-            <span className="mb-1.5 block font-medium">
+              <span className="mb-1.5 block font-medium">
                 <Link className="mb-5.5 inline-block" to="/">
                   <img className="hidden dark:block" src={Logo} alt="Logo" />
                   <img className="dark:hidden" src={LogoDark} alt="Logo" />
                 </Link>
               </span>
-               <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
+              <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
                 Sign Up
               </h2>
 
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label className="mb-2.5 block text-[14px] font-medium text-black dark:text-white">
                     First Name<span className="text-meta-1">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      type="text"
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName || ''}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsFirstNameValidation('');
+                      }}
                     />
-
-                        </div>
+                    {isFirstNameValidation && (
+                      <small className="text-danger">
+                        {isFirstNameValidation}.
+                      </small>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-4">
@@ -40,11 +107,21 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type="email"
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName || ''}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsLastNameValidation('');
+                      }}
                     />
-
-                     </div>
+                    {isLastNameValidation && (
+                      <small className="text-danger">
+                        {isLastNameValidation}.
+                      </small>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-4">
@@ -53,11 +130,22 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type="password"
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      type="email"
+                      name="email"
+                      value={formData.email || ''}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsEmailValidation('');
+                      }}
+                      autoComplete='on'
                     />
-
-                     </div>
+                    {isEmailValidation && (
+                      <small className="text-danger">
+                        {isEmailValidation}.
+                      </small>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-6">
@@ -66,18 +154,36 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type="password"
                       className="w-full rounded-lg border border-grayf bg-transparent py-2 pl-6 pr-10 outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      type="password"
+                      name="password"
+                      value={formData.password || ''}
+                      onChange={(e: any) => {
+                        handleForm(e);
+                        setIsPasswordValidation('');
+                      }}
+                      autoComplete='on'
                     />
-
-                     </div>
+                    {isPasswordValidation && (
+                      <small className="text-danger">
+                        {isPasswordValidation}
+                      </small>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-6">
                   <div className="relative">
-                    <input type="checkbox" /> &nbsp;  &nbsp; 
+                    <input type="checkbox" /> &nbsp; &nbsp;
                     <label className="mb-2.5 text-[12px] font-medium text-grayf dark:text-white">
-                      I agree to the <a href="" className="underline">Terms of Service</a> and <a href="" className="underline">Privacy Policy</a>
+                      I agree to the{' '}
+                      <a href="" className="underline">
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a href="" className="underline">
+                        Privacy Policy
+                      </a>
                     </label>
                   </div>
                 </div>
@@ -90,10 +196,12 @@ const SignUp = () => {
                   />
                 </div>
                 <div className="flex items-center mb-5">
-        <hr className="flex-1 border-t border-stroke" />
-        <span className="mx-4 text-[14px] text-black dark:text-white font-medium">Or</span>
-        <hr className="flex-1 border-t border-stroke" />
-      </div>
+                  <hr className="flex-1 border-t border-stroke" />
+                  <span className="mx-4 text-[14px] text-black dark:text-white font-medium">
+                    Or
+                  </span>
+                  <hr className="flex-1 border-t border-stroke" />
+                </div>
                 <button className="flex w-full text-black text-[14px] font-medium items-center justify-center gap-3.5 rounded-lg border border-stroke bg-white p-2 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50">
                   <span>
                     <svg
@@ -133,8 +241,11 @@ const SignUp = () => {
 
                 <div className="mt-3 text-center">
                   <p>
-                   Have an account already?{' '}
-                    <Link to="/auth/signin" className="text-[#0891B2] font-medium">
+                    Have an account already?{' '}
+                    <Link
+                      to="/auth/signin"
+                      className="text-[#0891B2] font-medium"
+                    >
                       Log in
                     </Link>
                   </p>
@@ -142,12 +253,10 @@ const SignUp = () => {
               </form>
             </div>
           </div>
-        
+
           <div className="hidden w-full h-full overflow-hidden xl:block xl:w-1/2">
             <img className="img-fluid" src={logingymimg} alt="Logo" />
           </div>
-
-         
         </div>
       </div>
     </>
